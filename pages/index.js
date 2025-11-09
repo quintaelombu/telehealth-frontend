@@ -47,25 +47,25 @@ export default function Home() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
+     const data = await res.json();
+if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
 
-      // Si viene link de pago → redirige
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
-      // Si viene link de videollamada → mostrar
-      if (data.join_url) {
-        setJoinUrl(data.join_url);
-        setMsg("Turno creado correctamente.");
-        return;
-      }
+// Mostrar el objeto completo recibido
+setMsg("Respuesta completa del backend:\n" + JSON.stringify(data, null, 2));
+console.log("Respuesta del backend:", data);
 
-      // Mostrar respuesta cruda para depurar
-      setMsg("Respuesta del backend:\n" + JSON.stringify(data, null, 2));
-      console.log("Respuesta del backend:", data);
-    } catch (e) {
+// Si el backend devuelve checkout_url o join_url, guardarlos
+if (data.checkout_url) {
+  setMsg("Redirigiendo a Mercado Pago...");
+  window.location.href = data.checkout_url;
+  return;
+}
+
+if (data.join_url) {
+  setJoinUrl(data.join_url);
+  setMsg("Turno creado correctamente. Enlace disponible más abajo.");
+  return;
+}    } catch (e) {
       setMsg(e.message || "Error inesperado.");
     } finally {
       setLoading(false);

@@ -26,7 +26,6 @@ export default function Home() {
     d.setHours(hh, mm, 0, 0);
     return d.toISOString(); // el backend puede guardar en UTC
   };
-
   const createAppointment = async () => {
     setLoading(true);
     setMsg(null);

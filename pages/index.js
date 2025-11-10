@@ -47,15 +47,14 @@ export default function Home() {
       const res = await fetch(`${BACKEND}/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patient_name: name || "Paciente",
-          patient_email: email || "paciente@example.com",
-          reason,
-          price,
-          duration,
-          start_at,
-        }),
-      });
+       body: JSON.stringify({
+  patient_name: name || "Paciente",
+  patient_email: email || "paciente@example.com",
+  reason,
+  price,
+  duration,
+  when_at: start_at,  // 👈 cambio clave
+}),      });
 
       const text = await res.text();
       setRawText(text); // SIEMPRE guardo el texto crudo

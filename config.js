@@ -1,1 +1,1 @@
-export const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+export const API_URL = "https://telehealth-backend-production-0021.up.railway.app";

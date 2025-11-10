@@ -9,11 +9,15 @@ export default function Home() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [reason, setReason] = useState("Consulta pediátrica");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [date, setDate] = useState("");     // YYYY-MM-DD
+  const [time, setTime] = useState("");     // HH:MM (24h)
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
+
+  // Para depurar SIEMPRE:
+  const [rawText, setRawText] = useState("");      // respuesta como texto
+  const [parsedObj, setParsedObj] = useState(null); // respuesta parseada (obj/array)
   const [joinUrl, setJoinUrl] = useState(null);
+  const [statusMsg, setStatusMsg] = useState("");
 
   const price = 40000;
   const duration = 30;
@@ -26,10 +30,15 @@ export default function Home() {
     return d.toISOString();
   };
 
+  const toPretty = (val) =>
+    typeof val === "string" ? val : JSON.stringify(val, null, 2);
+
   const createAppointment = async () => {
     setLoading(true);
-    setMsg("");
+    setRawText("");
+    setParsedObj(null);
     setJoinUrl(null);
+    setStatusMsg("");
 
     try {
       const start_at = buildStartAt();
@@ -48,39 +57,41 @@ export default function Home() {
         }),
       });
 
-      const text = await res.text(); // capturamos texto puro
-      console.log("Respuesta del backend:", text);
+      const text = await res.text();
+      setRawText(text); // SIEMPRE guardo el texto crudo
 
-      let data;
+      let data = null;
       try {
         data = JSON.parse(text);
+        setParsedObj(data); // también guardo el objeto (si es JSON)
       } catch {
-        data = text;
+        // no es JSON, listo
       }
 
-      if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
+      if (!res.ok) {
+        const msg =
+          (data && data.detail) ||
+          text ||
+          "No se pudo crear el turno.";
+        throw new Error(msg);
+      }
 
-      if (typeof data === "object") {
-        // si devuelve objeto o array
+      if (data && typeof data === "object") {
         if (data.checkout_url) {
-          setMsg("Redirigiendo a Mercado Pago...");
+          setStatusMsg("Redirigiendo a Mercado Pago…");
           window.location.href = data.checkout_url;
           return;
         }
-
         if (data.join_url) {
           setJoinUrl(data.join_url);
-          setMsg("Turno confirmado. Enlace de videollamada disponible abajo.");
+          setStatusMsg("Turno confirmado. Enlace de videollamada abajo.");
           return;
         }
-
-        setMsg(JSON.stringify(data, null, 2));
-      } else {
-        // si es texto plano
-        setMsg(data);
       }
-    } catch (e) {
-      setMsg(e.message || "Error inesperado.");
+
+      setStatusMsg("Turno creado. Respuesta recibida abajo.");
+    } catch (err) {
+      setStatusMsg(err.message || "Error inesperado.");
     } finally {
       setLoading(false);
     }
@@ -98,7 +109,8 @@ export default function Home() {
     primary: { background: "#0a2540", color: "#fff" },
     ghost: { background: "#f5f7fa", color: "#0a2540" },
     badge: { display: "inline-block", background: "#eef3f8", color: "#0a2540", fontWeight: 600, padding: "6px 10px", borderRadius: 999, fontSize: 12, marginRight: 8 },
-    ok: { background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 12, fontFamily: "monospace", whiteSpace: "pre-wrap" },
+    box: { background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 12 },
+    pre: { whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: 13, margin: 0 },
   };
 
   return (
@@ -154,12 +166,31 @@ export default function Home() {
           </a>
         </div>
 
-        {msg && <div style={styles.ok}>{msg}</div>}
+        {statusMsg && (
+          <div style={styles.box}>
+            <strong>{statusMsg}</strong>
+          </div>
+        )}
 
         {joinUrl && (
-          <div style={styles.ok}>
+          <div style={styles.box}>
             <div style={{ marginBottom: 6 }}>Pago confirmado. Enlace de videollamada:</div>
             <a href={joinUrl} target="_blank" rel="noreferrer">Unirme a la videollamada</a>
+          </div>
+        )}
+
+        {/* SIEMPRE muestra lo que devuelva el backend */}
+        {rawText && (
+          <div style={styles.box}>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Respuesta cruda (texto):</div>
+            <pre style={styles.pre}>{rawText}</pre>
+          </div>
+        )}
+
+        {parsedObj !== null && (
+          <div style={styles.box}>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Respuesta parseada (JSON):</div>
+            <pre style={styles.pre}>{toPretty(parsedObj)}</pre>
           </div>
         )}
       </div>

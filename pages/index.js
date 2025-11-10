@@ -9,14 +9,14 @@ export default function Home() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [reason, setReason] = useState("Consulta pediátrica");
-  const [date, setDate] = useState("");     // YYYY-MM-DD
-  const [time, setTime] = useState("");     // HH:MM
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [joinUrl, setJoinUrl] = useState(null);
 
-  const price = 40000;  // $40.000
-  const duration = 30;  // minutos
+  const price = 40000;
+  const duration = 30;
 
   const buildStartAt = () => {
     if (!date || !time) return null;
@@ -30,52 +30,51 @@ export default function Home() {
     setLoading(true);
     setMsg(null);
     setJoinUrl(null);
-   try {
-  const start_at = buildStartAt();
-  if (!start_at) throw new Error("Elegí fecha y hora.");
 
-  const res = await fetch(`${BACKEND}/appointments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      patient_name: name || "Paciente",
-      patient_email: email || "paciente@example.com",
-      reason,
-      price,
-      duration,
-      start_at,
-    }),
-  });
+    try {
+      const start_at = buildStartAt();
+      if (!start_at) throw new Error("Elegí fecha y hora.");
 
-  const data = await res.json();
+      const res = await fetch(`${BACKEND}/appointments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_name: name || "Paciente",
+          patient_email: email || "paciente@example.com",
+          reason,
+          price,
+          duration,
+          start_at,
+        }),
+      });
 
-  // 👇 Muestra exactamente qué devuelve el backend
-  console.log("Respuesta del backend:", data);
+      const data = await res.json();
+      console.log("Respuesta del backend:", data);
 
-  if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
+      if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
 
-  // Si devuelve un checkout_url (Mercado Pago)
-  if (data.checkout_url) {
-    setMsg("Redirigiendo a Mercado Pago...");
-    window.location.href = data.checkout_url;
-    return;
-  }
+      if (data.checkout_url) {
+        setMsg("Redirigiendo a Mercado Pago...");
+        window.location.href = data.checkout_url;
+        return;
+      }
 
-  // Si devuelve un join_url (enlace de videollamada)
-  if (data.join_url) {
-    setJoinUrl(data.join_url);
-    setMsg("Turno confirmado. Enlace de videollamada disponible abajo.");
-    return;
-  }
+      if (data.join_url) {
+        setJoinUrl(data.join_url);
+        setMsg("Turno confirmado. Enlace de videollamada disponible abajo.");
+        return;
+      }
 
-  // 🔍 Si no hay enlaces, muestra todo el JSON para depurar
-  setMsg("Respuesta del backend:\n" + JSON.stringify(data, null, 2));
+      // Si llega otro tipo de respuesta, mostramos el JSON legible
+      setMsg(data);
+    } catch (e) {
+      setMsg(e.message || "Error inesperado.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-} catch (e) {
-  setMsg(e.message || "Error inesperado.");
-} finally {
-  setLoading(false);
-}  const styles = {
+  const styles = {
     wrap: { maxWidth: 880, margin: "0 auto", padding: 24, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" },
     h1: { fontSize: 28, margin: 0 },
     h2: { fontSize: 16, color: "#5f6c7b", marginTop: 6 },
@@ -88,7 +87,6 @@ export default function Home() {
     ghost: { background: "#f5f7fa", color: "#0a2540" },
     badge: { display: "inline-block", background: "#eef3f8", color: "#0a2540", fontWeight: 600, padding: "6px 10px", borderRadius: 999, fontSize: 12, marginRight: 8 },
     ok: { background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: 12, marginTop: 12 },
-    pre: { background: "#fff", border: "1px solid #e6e9ec", borderRadius: 12, padding: 12, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 13 }
   };
 
   return (
@@ -144,7 +142,20 @@ export default function Home() {
           </a>
         </div>
 
-        {msg && <pre style={styles.pre}>{msg}</pre>}
+        {/* Mensaje / respuesta del backend */}
+        {msg != null && (
+          <pre
+            style={{
+              ...styles.ok,
+              background: "#fff",
+              borderColor: "#e6e9ec",
+              whiteSpace: "pre-wrap",
+              overflowX: "auto",
+            }}
+          >
+            {typeof msg === "string" ? msg : JSON.stringify(msg, null, 2)}
+          </pre>
+        )}
 
         {joinUrl && (
           <div style={styles.ok}>

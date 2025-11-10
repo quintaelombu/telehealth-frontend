@@ -65,8 +65,8 @@ export default function Home() {
         return;
       }
 
-      // Si llega otro tipo de respuesta, mostramos el JSON legible
-      setMsg(data);
+      // Mostramos todo el JSON devuelto por el backend
+      setMsg(JSON.stringify(data, null, 2));
     } catch (e) {
       setMsg(e.message || "Error inesperado.");
     } finally {
@@ -86,7 +86,7 @@ export default function Home() {
     primary: { background: "#0a2540", color: "#fff" },
     ghost: { background: "#f5f7fa", color: "#0a2540" },
     badge: { display: "inline-block", background: "#eef3f8", color: "#0a2540", fontWeight: 600, padding: "6px 10px", borderRadius: 999, fontSize: 12, marginRight: 8 },
-    ok: { background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: 12, marginTop: 12 },
+    ok: { background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12, marginTop: 12, fontFamily: "monospace", whiteSpace: "pre-wrap" },
   };
 
   return (
@@ -142,20 +142,7 @@ export default function Home() {
           </a>
         </div>
 
-        {/* Mensaje / respuesta del backend */}
-        {msg != null && (
-          <pre
-            style={{
-              ...styles.ok,
-              background: "#fff",
-              borderColor: "#e6e9ec",
-              whiteSpace: "pre-wrap",
-              overflowX: "auto",
-            }}
-          >
-            {typeof msg === "string" ? msg : JSON.stringify(msg, null, 2)}
-          </pre>
-        )}
+        {msg && <div style={styles.ok}>{msg}</div>}
 
         {joinUrl && (
           <div style={styles.ok}>

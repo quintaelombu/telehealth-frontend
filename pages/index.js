@@ -30,49 +30,52 @@ export default function Home() {
     setLoading(true);
     setMsg(null);
     setJoinUrl(null);
-    try {
-      const start_at = buildStartAt();
-      if (!start_at) throw new Error("Elegí fecha y hora.");
+   try {
+  const start_at = buildStartAt();
+  if (!start_at) throw new Error("Elegí fecha y hora.");
 
-      const res = await fetch(`${BACKEND}/appointments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patient_name: name || "Paciente",
-          patient_email: email || "paciente@example.com",
-          reason,
-          price,
-          duration,
-          start_at,
-        }),
-      });
+  const res = await fetch(`${BACKEND}/appointments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      patient_name: name || "Paciente",
+      patient_email: email || "paciente@example.com",
+      reason,
+      price,
+      duration,
+      start_at,
+    }),
+  });
 
-     const data = await res.json();
-if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
+  const data = await res.json();
 
-// Mostrar el objeto completo recibido
-setMsg("Respuesta completa del backend:\n" + JSON.stringify(data, null, 2));
-console.log("Respuesta del backend:", data);
+  // 👇 Muestra exactamente qué devuelve el backend
+  console.log("Respuesta del backend:", data);
 
-// Si el backend devuelve checkout_url o join_url, guardarlos
-if (data.checkout_url) {
-  setMsg("Redirigiendo a Mercado Pago...");
-  window.location.href = data.checkout_url;
-  return;
-}
+  if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
 
-if (data.join_url) {
-  setJoinUrl(data.join_url);
-  setMsg("Turno creado correctamente. Enlace disponible más abajo.");
-  return;
-}    } catch (e) {
-      setMsg(e.message || "Error inesperado.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Si devuelve un checkout_url (Mercado Pago)
+  if (data.checkout_url) {
+    setMsg("Redirigiendo a Mercado Pago...");
+    window.location.href = data.checkout_url;
+    return;
+  }
 
-  const styles = {
+  // Si devuelve un join_url (enlace de videollamada)
+  if (data.join_url) {
+    setJoinUrl(data.join_url);
+    setMsg("Turno confirmado. Enlace de videollamada disponible abajo.");
+    return;
+  }
+
+  // 🔍 Si no hay enlaces, muestra todo el JSON para depurar
+  setMsg("Respuesta del backend:\n" + JSON.stringify(data, null, 2));
+
+} catch (e) {
+  setMsg(e.message || "Error inesperado.");
+} finally {
+  setLoading(false);
+}  const styles = {
     wrap: { maxWidth: 880, margin: "0 auto", padding: 24, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" },
     h1: { fontSize: 28, margin: 0 },
     h2: { fontSize: 16, color: "#5f6c7b", marginTop: 6 },

@@ -12,7 +12,7 @@ export default function Home() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState(null);
+  const [msg, setMsg] = useState("");
   const [joinUrl, setJoinUrl] = useState(null);
 
   const price = 40000;
@@ -28,7 +28,7 @@ export default function Home() {
 
   const createAppointment = async () => {
     setLoading(true);
-    setMsg(null);
+    setMsg("");
     setJoinUrl(null);
 
     try {
@@ -48,25 +48,37 @@ export default function Home() {
         }),
       });
 
-      const data = await res.json();
-      console.log("Respuesta del backend:", data);
+      const text = await res.text(); // capturamos texto puro
+      console.log("Respuesta del backend:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
 
       if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
 
-      if (data.checkout_url) {
-        setMsg("Redirigiendo a Mercado Pago...");
-        window.location.href = data.checkout_url;
-        return;
-      }
+      if (typeof data === "object") {
+        // si devuelve objeto o array
+        if (data.checkout_url) {
+          setMsg("Redirigiendo a Mercado Pago...");
+          window.location.href = data.checkout_url;
+          return;
+        }
 
-      if (data.join_url) {
-        setJoinUrl(data.join_url);
-        setMsg("Turno confirmado. Enlace de videollamada disponible abajo.");
-        return;
-      }
+        if (data.join_url) {
+          setJoinUrl(data.join_url);
+          setMsg("Turno confirmado. Enlace de videollamada disponible abajo.");
+          return;
+        }
 
-      // Mostramos todo el JSON devuelto por el backend
-      setMsg(JSON.stringify(data, null, 2));
+        setMsg(JSON.stringify(data, null, 2));
+      } else {
+        // si es texto plano
+        setMsg(data);
+      }
     } catch (e) {
       setMsg(e.message || "Error inesperado.");
     } finally {

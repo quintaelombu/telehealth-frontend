@@ -34,6 +34,7 @@ const handleSubmit = async (e) => {
         duration,
         start_at,  // 👈 el backend espera este campo
       }),
+    });
 
     // Si falla, muestro el texto crudo del backend
     if (!response.ok) {
@@ -51,7 +52,7 @@ const handleSubmit = async (e) => {
   } catch (err) {
     setMsg(typeof err.message === "string" ? err.message : String(err));
   } finally {
-    setLoading(false);};
+    setLoading(false);
 
   return (
     <main style={styles.container}>

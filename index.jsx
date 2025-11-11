@@ -20,10 +20,10 @@ const handleSubmit = async (e) => {
   try {
     if (!date || !time) throw new Error("Debe seleccionar fecha y hora");
 
-    // ISO para el backend (ajustá zona si querés fijo -03:00)
+    // ISO para backend
     const start_at = new Date(`${date}T${time}`).toISOString();
 
-    const response = await fetch(`${API_URL}/appointments`, {
+    const res = await fetch(`${API_URL}/appointments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -32,28 +32,18 @@ const handleSubmit = async (e) => {
         reason,
         price,
         duration,
-        start_at,  // 👈 el backend espera este campo
+        start_at, // <-- clave correcta que espera el backend
       }),
     });
 
-    // Si falla, muestro el texto crudo del backend
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(errText || `HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.checkout_url) {
-      window.location.href = data.checkout_url;
-    } else {
-      setMsg(JSON.stringify(data, null, 2));
-    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(JSON.stringify(data));
+    if (data.checkout_url) window.location.href = data.checkout_url;
+    else setMsg(JSON.stringify(data, null, 2));
   } catch (err) {
-    setMsg(typeof err.message === "string" ? err.message : String(err));
+    setMsg(typeof err?.message === "string" ? err.message : String(err));
   } finally {
     setLoading(false);
-
   return (
     <main style={styles.container}>
       <h1>Teleconsulta con el Dr. Emilio Galdeano</h1>

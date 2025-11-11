@@ -12,47 +12,46 @@ export default function Home() {
   const [price] = useState(40000);
   const [duration] = useState(30);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMsg("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setMsg("");
 
-    try {
-      if (!date || !time) throw new Error("Debe seleccionar fecha y hora");
+  try {
+    if (!date || !time) throw new Error("Debe seleccionar fecha y hora");
 
-      // 🔹 Genera fecha ISO válida para el backend
-      const start_at = new Date(`${date}T${time}`).toISOString();
+    // ISO para el backend (ajustá zona si querés fijo -03:00)
+    const start_at = new Date(`${date}T${time}`).toISOString();
 
-      const res = await fetch(`${API_URL}/appointments/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patient_name: patientName || "Paciente",
-          patient_email: patientEmail || "paciente@example.com",
-          reason,
-          price,
-          duration,
-          start_at, // ✅ Backend espera este campo
-        }),
-      });
+    const response = await fetch(`${API_URL}/appointments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        patient_name: patientName || "Paciente",
+        patient_email: patientEmail || "paciente@example.com",
+        reason,
+        price,
+        duration,
+        start_at,  // 👈 el backend espera este campo
+      }),
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(JSON.stringify(data));
-
-      // 🔹 Si todo va bien, redirige a Mercado Pago
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
-        setMsg("No se pudo generar el link de pago.");
-      }
-    } catch (err) {
-      console.error(err);
-      setMsg(err.message || "Error al crear el turno");
-    } finally {
-      setLoading(false);
+    // Si falla, muestro el texto crudo del backend
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(errText || `HTTP ${response.status}`);
     }
-  };
+
+    const data = await response.json();
+
+    if (data.checkout_url) {
+      window.location.href = data.checkout_url;
+    } else {
+      setMsg(JSON.stringify(data, null, 2));
+    }
+  } catch (err) {
+    setMsg(typeof err.message === "string" ? err.message : String(err));
+  } finally {
+    setLoading(false);};
 
   return (
     <main style={styles.container}>

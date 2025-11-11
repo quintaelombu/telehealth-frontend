@@ -1,89 +1,144 @@
-
-import { useState } from 'react'
-import { BACKEND } from '@/lib/config'
+import { useState } from "react";
+import { API_URL } from "../config";
 
 export default function Home() {
-  const [name, setName] = useState('')
-  const [reason, setReason] = useState('Consulta pediátrica')
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState(null)
-  const [joinUrl, setJoinUrl] = useState(null)
-  const price = 40000
-  const duration = 30
+  const [patientName, setPatientName] = useState("");
+  const [patientEmail, setPatientEmail] = useState("");
+  const [reason, setReason] = useState("Consulta pediátrica");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [price] = useState(40000);
+  const [duration] = useState(30);
 
-  const createAppointment = async () => {
-    setLoading(true); setMessage(null); setJoinUrl(null)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMsg("");
+
     try {
-      const res = await fetch(`${BACKEND}/appointments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patient_name: name || 'Paciente',
-          patient_email: email || 'paciente@example.com',
-          reason, price, duration, start_at,
-        })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.detail || 'Error al crear turno')
+      if (!date || !time) throw new Error("Debe seleccionar fecha y hora");
 
+      // 🔹 Genera fecha ISO válida para el backend
+      const start_at = new Date(`${date}T${time}`).toISOString();
+
+      const res = await fetch(`${API_URL}/appointments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_name: patientName || "Paciente",
+          patient_email: patientEmail || "paciente@example.com",
+          reason,
+          price,
+          duration,
+          start_at, // ✅ Backend espera este campo
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(JSON.stringify(data));
+
+      // 🔹 Si todo va bien, redirige a Mercado Pago
       if (data.checkout_url) {
-        window.location.href = data.checkout_url
-        return
+        window.location.href = data.checkout_url;
+      } else {
+        setMsg("No se pudo generar el link de pago.");
       }
-      if (data.join_url) setJoinUrl(data.join_url)
-      setMessage('Turno generado.')
-    } catch (e) {
-      setMessage(e.message || 'Error inesperado')
+    } catch (err) {
+      console.error(err);
+      setMsg(err.message || "Error al crear el turno");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="container">
+    <main style={styles.container}>
       <h1>Teleconsulta con el Dr. Emilio Galdeano</h1>
-      <h2>Pediatra Infectólogo — Atención online</h2>
-      <div className="row" style={{marginTop:8}}>
-        <span className="badge">Valor: $40.000</span>
-        <span className="badge">Duración: 30 minutos</span>
-        <span className="badge">Videollamada segura</span>
-      </div>
+      <p>Pediatra Infectólogo — Atención online</p>
+      <p>Valor: <b>${price.toLocaleString("es-AR")}</b> | Duración: {duration} min</p>
+      <hr />
 
-      <div className="card">
-        <h2>Solicitar turno y pagar consulta</h2>
-        <div className="row">
-          <div style={{flex:'1 1 260px'}}>
-            <label>Nombre y apellido</label>
-            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Nombre del paciente" />
-          </div>
-          <div style={{flex:'1 1 260px'}}>
-            <label>Email</label>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="correo@ejemplo.com" />
-          </div>
-        </div>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <label>Nombre y apellido</label>
+        <input
+          type="text"
+          value={patientName}
+          onChange={(e) => setPatientName(e.target.value)}
+          placeholder="Nombre del paciente"
+        />
+
+        <label>Email</label>
+        <input
+          type="email"
+          value={patientEmail}
+          onChange={(e) => setPatientEmail(e.target.value)}
+          placeholder="paciente@example.com"
+        />
+
         <label>Motivo de consulta</label>
-        <textarea rows={3} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Síntomas, edad, antecedentes..." />
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
 
-        <div className="row">
-          <button className="btn-primary" onClick={createAppointment} disabled={loading}>
-            {loading ? 'Procesando...' : 'Solicitar turno y pagar consulta'}
-          </button>
-          <a className="btn-ghost" href="/doctor">Ir al panel médico</a>
-        </div>
+        <label>Fecha</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
 
-        {message && <div className="card" style={{marginTop:12}}>{message}</div>}
-        {joinUrl && (
-          <div className="card success" style={{marginTop:12}}>
-            <div style={{marginBottom:8}}>Pago confirmado. Podés entrar a la videollamada:</div>
-            <a className="link" href={joinUrl} target="_blank" rel="noreferrer">Unirme a la videollamada</a>
-          </div>
-        )}
-      </div>
+        <label>Hora</label>
+        <input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+        />
 
-      <div className="footer">
-        <div>Soporte: jegaldeano@hotmail.com</div>
-      </div>
-    </div>
-  )
+        <button type="submit" disabled={loading}>
+          {loading ? "Procesando..." : "Solicitar turno y pagar consulta"}
+        </button>
+      </form>
+
+      {msg && (
+        <pre style={styles.msgBox}>
+          {msg}
+        </pre>
+      )}
+
+      <footer style={styles.footer}>
+        Soporte: <a href="mailto:jegaldeano@hotmail.com">jegaldeano@hotmail.com</a>
+      </footer>
+    </main>
+  );
 }
+
+const styles = {
+  container: {
+    maxWidth: "500px",
+    margin: "50px auto",
+    fontFamily: "Arial, sans-serif",
+    textAlign: "center",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    marginTop: "20px",
+  },
+  msgBox: {
+    backgroundColor: "#eee",
+    padding: "10px",
+    marginTop: "20px",
+    whiteSpace: "pre-wrap",
+    textAlign: "left",
+  },
+  footer: {
+    marginTop: "40px",
+    fontSize: "0.9em",
+    color: "#666",
+  },
+};

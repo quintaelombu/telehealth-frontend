@@ -21,7 +21,7 @@ export default function Home() {
         body: JSON.stringify({
           patient_name: name || 'Paciente',
           patient_email: email || 'paciente@example.com',
-          reason, price, duration
+          reason, price, duration, start_at,
         })
       })
       const data = await res.json()

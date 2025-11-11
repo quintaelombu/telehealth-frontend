@@ -23,7 +23,7 @@ export default function Home() {
       // 🔹 Genera fecha ISO válida para el backend
       const start_at = new Date(`${date}T${time}`).toISOString();
 
-      const res = await fetch(`${API_URL}/appointments`, {
+      const res = await fetch(`${API_URL}/appointments/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

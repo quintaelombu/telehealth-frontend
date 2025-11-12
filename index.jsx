@@ -1,7 +1,7 @@
- //actualizacion // pages/index.jsx
+// pages/index.jsx
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function Home() {
   const [name, setName] = useState("");

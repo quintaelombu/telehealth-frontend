@@ -1,4 +1,4 @@
-// pages/index.jsx
+ //actualizacion // pages/index.jsx
 import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;

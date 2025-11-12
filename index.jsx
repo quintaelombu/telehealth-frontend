@@ -1,134 +1,157 @@
+// pages/index.jsx
 import { useState } from "react";
-import { API_URL } from "../config";
+
+const BACKEND =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://telehealth-backend-production-0021.up.railway.app";
 
 export default function Home() {
-  const [patientName, setPatientName] = useState("");
-  const [patientEmail, setPatientEmail] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [reason, setReason] = useState("Consulta pediátrica");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [price] = useState(40000);
-  const [duration] = useState(30);
+  const [msg, setMsg] = useState(null);
+  const [joinUrl, setJoinUrl] = useState(null);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setMsg("");
+  const price = 100; // 💰 Prueba $100
+  const duration = 30; // minutos
 
-  try {
-    if (!date || !time) throw new Error("Debe seleccionar fecha y hora");
+  const buildStartAt = () => {
+    if (!date || !time) return null;
+    const [hh, mm] = time.split(":").map(Number);
+    const d = new Date(date);
+    d.setHours(hh, mm, 0, 0);
+    return d.toISOString();
+  };
 
-    // ISO para backend
-    const start_at = new Date(`${date}T${time}`).toISOString();
+  const createAppointment = async () => {
+    setLoading(true);
+    setMsg(null);
+    setJoinUrl(null);
 
-    const res = await fetch(`${API_URL}/appointments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        patient_name: patientName || "Paciente",
-        patient_email: patientEmail || "paciente@example.com",
-        reason,
-        price,
-        duration,
-        start_at, // <-- clave correcta que espera el backend
-      }),
-    });
+    try {
+      const start_at = buildStartAt();
+      if (!start_at) throw new Error("Elegí fecha y hora.");
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(JSON.stringify(data));
-    if (data.checkout_url) window.location.href = data.checkout_url;
-    else setMsg(JSON.stringify(data, null, 2));
-  } catch (err) {
-    setMsg(typeof err?.message === "string" ? err.message : String(err));
-  } finally {
-    setLoading(false);
+      const res = await fetch(`${BACKEND}/appointments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_name: name || "Paciente",
+          patient_email: email || "paciente@example.com",
+          reason,
+          price,
+          duration,
+          start_at,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
+
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
+
+      if (data.join_url) {
+        setJoinUrl(data.join_url);
+        setMsg("Turno creado correctamente.");
+        return;
+      }
+
+      setMsg("Turno creado. Esperando confirmación de pago.");
+    } catch (e) {
+      setMsg(e.message || "Error inesperado.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const styles = {
+    wrap: { maxWidth: 880, margin: "0 auto", padding: 24, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" },
+    h1: { fontSize: 28, margin: 0 },
+    h2: { fontSize: 16, color: "#5f6c7b", marginTop: 6 },
+    card: { border: "1px solid #e6e9ec", borderRadius: 16, padding: 20, marginTop: 16 },
+    row: { display: "flex", gap: 12, flexWrap: "wrap" },
+    label: { fontSize: 14, color: "#5f6c7b", marginBottom: 6 },
+    input: { width: "100%", padding: "12px 14px", border: "1px solid #d7dce1", borderRadius: 12, fontSize: 16 },
+    btn: { border: 0, borderRadius: 12, padding: "14px 16px", fontWeight: 700, fontSize: 16, cursor: "pointer" },
+    primary: { background: "#0a2540", color: "#fff" },
+    ghost: { background: "#f5f7fa", color: "#0a2540" },
+    badge: { display: "inline-block", background: "#eef3f8", color: "#0a2540", fontWeight: 600, padding: "6px 10px", borderRadius: 999, fontSize: 12, marginRight: 8 },
+    ok: { background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: 12, marginTop: 12 },
+  };
+
   return (
-    <main style={styles.container}>
-      <h1>Teleconsulta con el Dr. Emilio Galdeano</h1>
-      <p>Pediatra Infectólogo — Atención online</p>
-      <p>Valor: <b>${price.toLocaleString("es-AR")}</b> | Duración: {duration} min</p>
-      <hr />
+    <div style={styles.wrap}>
+      <h1 style={styles.h1}>Teleconsulta con el Dr. Emilio Galdeano</h1>
+      <div style={styles.h2}>Pediatra Infectólogo — Atención online</div>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label>Nombre y apellido</label>
-        <input
-          type="text"
-          value={patientName}
-          onChange={(e) => setPatientName(e.target.value)}
-          placeholder="Nombre del paciente"
-        />
+      <div style={{ marginTop: 8 }}>
+        <span style={styles.badge}>Valor: $100</span>
+        <span style={styles.badge}>Duración: 30 min</span>
+        <span style={styles.badge}>Videollamada segura</span>
+      </div>
 
-        <label>Email</label>
-        <input
-          type="email"
-          value={patientEmail}
-          onChange={(e) => setPatientEmail(e.target.value)}
-          placeholder="paciente@example.com"
-        />
+      <div style={styles.card}>
+        <div style={{ fontWeight: 600, marginBottom: 10 }}>Solicitar turno y pagar</div>
 
-        <label>Motivo de consulta</label>
-        <textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-        />
+        <div style={styles.row}>
+          <div style={{ flex: "1 1 260px" }}>
+            <div style={styles.label}>Nombre y apellido</div>
+            <input style={styles.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del paciente" />
+          </div>
+          <div style={{ flex: "1 1 260px" }}>
+            <div style={styles.label}>Email</div>
+            <input style={styles.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" />
+          </div>
+        </div>
 
-        <label>Fecha</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <div style={styles.label}>Motivo de consulta</div>
+        <textarea rows={3} style={{ ...styles.input, height: 100 }} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Síntomas, edad, antecedentes..." />
 
-        <label>Hora</label>
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-        />
+        <div style={styles.row}>
+          <div style={{ flex: "1 1 160px" }}>
+            <div style={styles.label}>Fecha</div>
+            <input style={styles.input} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div style={{ flex: "1 1 160px" }}>
+            <div style={styles.label}>Hora</div>
+            <input style={styles.input} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          </div>
+        </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Procesando..." : "Solicitar turno y pagar consulta"}
-        </button>
-      </form>
+        <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+          <button
+            style={{ ...styles.btn, ...styles.primary }}
+            onClick={createAppointment}
+            disabled={loading}
+          >
+            {loading ? "Procesando..." : "Solicitar turno y pagar consulta"}
+          </button>
 
-      {msg && (
-        <pre style={styles.msgBox}>
-          {msg}
-        </pre>
-      )}
+          <a href="/doctor" style={{ ...styles.btn, ...styles.ghost, textDecoration: "none", display: "inline-block" }}>
+            Panel médico
+          </a>
+        </div>
 
-      <footer style={styles.footer}>
-        Soporte: <a href="mailto:jegaldeano@hotmail.com">jegaldeano@hotmail.com</a>
-      </footer>
-    </main>
+        {msg && <div style={{ ...styles.ok, background: "#fff", borderColor: "#e6e9ec" }}>{msg}</div>}
+
+        {joinUrl && (
+          <div style={styles.ok}>
+            <div style={{ marginBottom: 6 }}>Pago confirmado. Enlace de videollamada:</div>
+            <a href={joinUrl} target="_blank" rel="noreferrer">Unirme a la videollamada</a>
+          </div>
+        )}
+      </div>
+
+      <div style={{ fontSize: 12, color: "#8a98a6", marginTop: 16 }}>
+        Soporte: jegaldeano@hotmail.com
+      </div>
+    </div>
   );
 }
-
-const styles = {
-  container: {
-    maxWidth: "500px",
-    margin: "50px auto",
-    fontFamily: "Arial, sans-serif",
-    textAlign: "center",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    marginTop: "20px",
-  },
-  msgBox: {
-    backgroundColor: "#eee",
-    padding: "10px",
-    marginTop: "20px",
-    whiteSpace: "pre-wrap",
-    textAlign: "left",
-  },
-  footer: {
-    marginTop: "40px",
-    fontSize: "0.9em",
-    color: "#666",
-  },
-};

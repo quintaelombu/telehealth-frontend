@@ -1,9 +1,7 @@
 // pages/index.jsx
 import { useState } from "react";
 
-const BACKEND =
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "https://telehealth-backend-production-0021.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -15,7 +13,7 @@ export default function Home() {
   const [msg, setMsg] = useState(null);
   const [joinUrl, setJoinUrl] = useState(null);
 
-  const price = 100; // 💰 Prueba $100
+  const price = 100; // 💰 prueba
   const duration = 30; // minutos
 
   const buildStartAt = () => {
@@ -35,7 +33,7 @@ export default function Home() {
       const start_at = buildStartAt();
       if (!start_at) throw new Error("Elegí fecha y hora.");
 
-      const res = await fetch(`${BACKEND}/appointments`, {
+      const res = await fetch(`${API_URL}/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -49,7 +47,6 @@ export default function Home() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data?.detail || "No se pudo crear el turno.");
 
       if (data.checkout_url) {

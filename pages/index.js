@@ -13,7 +13,7 @@ export default function Home() {
   const [msg, setMsg] = useState(null);
   const [joinUrl, setJoinUrl] = useState(null);
 
-  const price = 40000;      // 💰 Prueba $100
+  const price = 100;      // 💰 Prueba $100
   const duration = 30;    // minutos
 
   const buildStartAt = () => {

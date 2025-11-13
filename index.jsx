@@ -74,11 +74,11 @@ export default function Home() {
         throw new Error(detail);
       }
 
-      // Si Mercado Pago devolvió la URL de checkout, redirigimos
-      if (data.checkout_url) {
+      // Redirección correcta a Mercado Pago + vuelta al /done
+if (data.checkout_url) {
   window.location.href = `${data.checkout_url}&back_url=https://teleconsulta-emilio.vercel.app/done`;
   return;
-      }
+}
 
       // Si hubiera link de videollamada directo
       if (data?.join_url) {

@@ -43,17 +43,17 @@ export default function Home() {
       if (!start_at) throw new Error("Debes elegir fecha y hora.");
 
       const res = await fetch(`${API_URL}/appointments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patient_name: name || "Paciente",
-          patient_email: email || "paciente@example.com",
-          reason,
-          price,
-          duration,
-          when_at: start_at, // 👈 el backend espera ESTE campo
-        }),
-      });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    patient_name: name || "Paciente",
+    patient_email: email || "paciente@example.com",
+    reason,
+    price,
+    duration,
+    start_at,    // 👈 AQUÍ: usar start_at, no when_at
+  }),
+});
 
       const data = await res.json().catch(() => null);
 

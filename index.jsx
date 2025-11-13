@@ -51,7 +51,7 @@ export default function Home() {
           reason,
           price,
           duration,
-          start_at, // 👈 el backend espera ESTE campo
+          when_at: start_at, // 👈 el backend espera ESTE campo
         }),
       });
 
